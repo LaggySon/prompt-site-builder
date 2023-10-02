@@ -2,16 +2,51 @@ import { signIn, signOut, useSession } from "next-auth/react";
 import Head from "next/head";
 import Link from "next/link";
 
+import Image from "next/image";
+
 import { api } from "~/utils/api";
 
 import parse from "html-react-parser";
 import { useState } from "react";
 
+import { env } from "~/env.mjs";
+
+import OpenAI from "openai";
+
 export default function Home() {
   const hello = api.example.hello.useQuery({ text: "from tRPC" });
 
   // Create a state variable to hold the text from the textarea
-  const [text, setText] = useState("");
+  const [text, setText] = useState("Enter a prompt...");
+  const [result, setResult] = useState("");
+  const [loading, setLoading] = useState(false);
+
+  const getGPT = async (prompt: string) => {
+    setLoading(true);
+
+    const openai = new OpenAI({
+      apiKey: env.NEXT_PUBLIC_OPENAI_API_KEY,
+      dangerouslyAllowBrowser: true,
+    });
+
+    const response = await openai.chat.completions.create({
+      model: "gpt-3.5-turbo",
+      messages: [
+        {
+          role: "system",
+          content: prompt,
+        },
+      ],
+      temperature: 1,
+      max_tokens: 256,
+      top_p: 1,
+      frequency_penalty: 0,
+      presence_penalty: 0,
+    });
+
+    setLoading(false);
+    setResult(response.choices[0]?.message.content || "error");
+  };
 
   // Event handler to update the 'text' state variable
   const handleTextareaChange = (event: any) => {
@@ -33,33 +68,28 @@ export default function Home() {
             value={text}
             onChange={handleTextareaChange}
           />
-          <div>{parse(text)}</div>
+          <div className="align-center flex justify-center">
+            <button
+              onClick={() => getGPT(text)}
+              className="h-10 w-32 bg-white text-black"
+            >
+              Create page
+            </button>
+          </div>
+        </div>
+        <div className="m-20">
+          {loading ? (
+            <Image
+              height="100"
+              width="100"
+              src="/loading.svg"
+              alt="loading spinner"
+            />
+          ) : (
+            parse(result)
+          )}
         </div>
       </main>
     </>
-  );
-}
-
-function AuthShowcase() {
-  const { data: sessionData } = useSession();
-
-  const { data: secretMessage } = api.example.getSecretMessage.useQuery(
-    undefined, // no input
-    { enabled: sessionData?.user !== undefined },
-  );
-
-  return (
-    <div className="flex flex-col items-center justify-center gap-4">
-      <p className="text-center text-2xl text-white">
-        {sessionData && <span>Logged in as {sessionData.user?.name}</span>}
-        {secretMessage && <span> - {secretMessage}</span>}
-      </p>
-      <button
-        className="rounded-full bg-white/10 px-10 py-3 font-semibold text-white no-underline transition hover:bg-white/20"
-        onClick={sessionData ? () => void signOut() : () => void signIn()}
-      >
-        {sessionData ? "Sign out" : "Sign in"}
-      </button>
-    </div>
   );
 }
