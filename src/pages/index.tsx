@@ -45,11 +45,13 @@ export default function Home() {
     });
 
     setLoading(false);
-    setResult(response.choices[0]?.message.content || "error");
+    setResult(response.choices[0]?.message.content ?? "error");
   };
 
   // Event handler to update the 'text' state variable
-  const handleTextareaChange = (event: any) => {
+  const handleTextareaChange: React.ChangeEventHandler<HTMLTextAreaElement> = (
+    event,
+  ) => {
     setText(event.target.value);
   };
 
@@ -70,7 +72,15 @@ export default function Home() {
           />
           <div className="align-center flex justify-center">
             <button
-              onClick={() => getGPT(text)}
+              onClick={async () => {
+                try {
+                  await getGPT(text);
+                  // Any additional code you want to execute after the promise is resolved.
+                } catch (error) {
+                  // Handle any errors that occur during the promise execution.
+                  console.error(error);
+                }
+              }}
               className="h-10 w-32 bg-white text-black"
             >
               Create page
