@@ -17,7 +17,7 @@ export default function Home() {
   const hello = api.example.hello.useQuery({ text: "from tRPC" });
 
   // Create a state variable to hold the text from the textarea
-  const [text, setText] = useState("Enter a prompt...");
+  const [text, setText] = useState("");
   const [result, setResult] = useState("");
   const [loading, setLoading] = useState(false);
 
@@ -69,6 +69,7 @@ export default function Home() {
             cols={50}
             value={text}
             onChange={handleTextareaChange}
+            placeholder="Enter a prompt..."
           />
           <div className="align-center flex justify-center">
             <button
@@ -96,7 +97,7 @@ export default function Home() {
               alt="loading spinner"
             />
           ) : (
-            parse(result)
+            <div className="w-full">{parse(result)}</div>
           )}
         </div>
       </main>
